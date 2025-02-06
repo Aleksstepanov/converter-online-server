@@ -4,10 +4,7 @@ import { Repository } from 'typeorm';
 import bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { User } from './user.entity';
-
-interface JwtPayload {
-  sub: number;
-}
+import { TJwtPayload } from './types';
 
 @Injectable()
 export class AuthService {
@@ -49,7 +46,7 @@ export class AuthService {
   }
 
   async refreshToken(oldRefreshToken: string) {
-    const payload = this.jwtService.verify<JwtPayload>(oldRefreshToken, {
+    const payload = this.jwtService.verify<TJwtPayload>(oldRefreshToken, {
       secret: process.env.JWT_REFRESH_SECRET,
     });
     const user = await this.userRepository.findOne({
