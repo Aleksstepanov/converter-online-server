@@ -7,8 +7,10 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Auth API')
-    .setDescription('The Auth API description')
+    .setDescription('API для аутентификации пользователей')
     .setVersion('1.0')
+    .addTag('auth')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
-import { User } from '../auth/user.entity';
+import { User } from '../modules/auth/user.entity';
 import * as dotenv from 'dotenv';
-dotenv.config(); // Загружает переменные окружения из .env
+dotenv.config();
 
 export const AppDataSource = new DataSource({
   type: 'postgres',

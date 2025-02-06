@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
+import { ErrorHandlingFilter } from './common/filters';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from './auth/auth.module';
-import { User } from './auth/user.entity';
+import { AuthModule } from './modules/auth/auth.module';
+import { User } from './modules/auth/user.entity';
 
 @Module({
   imports: [
@@ -11,9 +13,15 @@ import { User } from './auth/user.entity';
       type: 'postgres',
       url: process.env.DATABASE_URL,
       entities: [User],
-      synchronize: true, // В проде убрать!
+      synchronize: true,
     }),
     AuthModule,
+  ],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: ErrorHandlingFilter,
+    },
   ],
 })
 export class AppModule {}

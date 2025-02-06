@@ -1,7 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  InternalServerErrorException,
+  UnauthorizedException, HttpException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { User } from './user.entity';
 import { TJwtPayload } from './types';
@@ -20,6 +25,13 @@ export class AuthService {
     password: string,
   ) {
     try {
+      const existingUser = await this.userRepository.findOne({
+        where: { email },
+      });
+      if (existingUser) {
+        throw new BadRequestException('Email already in use');
+      }
+
       const hashedPassword = await bcrypt.hash(password, 10);
 
       const user: User = this.userRepository.create({
@@ -32,8 +44,10 @@ export class AuthService {
       await this.userRepository.save(user);
       return this.generateTokens(user);
     } catch (error) {
-      console.error('Error in register method:', error);
-      throw new Error('Registration failed');
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Registration failed');
     }
   }
 
