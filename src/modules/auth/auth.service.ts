@@ -2,7 +2,8 @@ import {
   Injectable,
   BadRequestException,
   InternalServerErrorException,
-  UnauthorizedException, HttpException,
+  UnauthorizedException,
+  HttpException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
