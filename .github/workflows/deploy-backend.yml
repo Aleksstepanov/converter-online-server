@@ -33,7 +33,7 @@ jobs:
           source: "dist/"
           target: "/home/converter/apps/converter-online-server/dist/"
           overwrite: true
-          tar_exec: "tar --no-same-owner -xzf"
+          tar_exec: "/bin/tar --no-same-owner -xzf"
 
       - name: Создаём .env на сервере
         uses: appleboy/ssh-action@master
