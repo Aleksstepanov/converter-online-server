@@ -1,0 +1,73 @@
+name: Deploy NestJS Backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout репозитория
+        uses: actions/checkout@v3
+
+      - name: Установка Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.14.0
+
+      - name: Установка зависимостей
+        run: npm install
+
+      - name: Билд проекта
+        run: npm run build
+
+      - name: Деплой на сервер
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "dist/"
+          target: "/home/converter/apps/converter-online-server/dist/"
+          overwrite: true
+          tar_exec: "tar --no-same-owner -xzf"
+
+      - name: Создаём .env на сервере
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > /home/converter/apps/converter-online-server/.env
+            echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> /home/converter/apps/converter-online-server/.env
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> /home/converter/apps/converter-online-server/.env
+            echo "DB_NAME=${{ secrets.DB_NAME }}" >> /home/converter/apps/converter-online-server/.env
+            echo "JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}" >> /home/converter/apps/converter-online-server/.env
+            echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}" >> /home/converter/apps/converter-online-server/.env
+            echo "JWT_ACCESS_EXPIRATION=${{ secrets.JWT_ACCESS_EXPIRATION }}" >> /home/converter/apps/converter-online-server/.env
+            echo "JWT_REFRESH_EXPIRATION=${{ secrets.JWT_REFRESH_EXPIRATION }}" >> /home/converter/apps/converter-online-server/.env
+
+      - name: Применение миграций TypeORM
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/converter/apps/converter-online-server
+            npm run migration:run || echo "Миграции уже применены"
+
+      - name: Перезапуск бэкенда через PM2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/converter/apps/converter-online-server
+            pm2 restart converter-server || pm2 start dist/main.js --name converter-server
+            pm2 save
