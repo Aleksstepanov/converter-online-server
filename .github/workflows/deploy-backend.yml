@@ -16,7 +16,7 @@ jobs:
       - name: Установка Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 22.14.0
+          node-version: 20
 
       - name: Установка зависимостей
         run: npm install
@@ -41,14 +41,18 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > /home/converter/apps/converter-online-server/.env
-            echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> /home/converter/apps/converter-online-server/.env
-            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> /home/converter/apps/converter-online-server/.env
-            echo "DB_NAME=${{ secrets.DB_NAME }}" >> /home/converter/apps/converter-online-server/.env
-            echo "JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}" >> /home/converter/apps/converter-online-server/.env
-            echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}" >> /home/converter/apps/converter-online-server/.env
-            echo "JWT_ACCESS_EXPIRATION=${{ secrets.JWT_ACCESS_EXPIRATION }}" >> /home/converter/apps/converter-online-server/.env
-            echo "JWT_REFRESH_EXPIRATION=${{ secrets.JWT_REFRESH_EXPIRATION }}" >> /home/converter/apps/converter-online-server/.env
+            cat <<EOF > /home/converter/apps/converter-online-server/.env
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
+            JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+            JWT_ACCESS_EXPIRATION=${{ secrets.JWT_ACCESS_EXPIRATION }}
+            JWT_REFRESH_EXPIRATION=${{ secrets.JWT_REFRESH_EXPIRATION }}
+            EOF
+            chmod 600 /home/converter/apps/converter-online-server/.env
+            chown converter:www-data /home/converter/apps/converter-online-server/.env
 
       - name: Применение миграций TypeORM
         uses: appleboy/ssh-action@master
@@ -58,7 +62,11 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/converter/apps/converter-online-server
-            npm run migration:run || echo "Миграции уже применены"
+            if npm run migration:show | grep "No migrations"; then
+              echo "Нет новых миграций, пропускаем..."
+            else
+              npm run migration:run
+            fi
 
       - name: Перезапуск бэкенда через PM2
         uses: appleboy/ssh-action@master
