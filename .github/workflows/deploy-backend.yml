@@ -74,5 +74,5 @@ jobs:
           script: |
             export PATH=$PATH:/home/converter/.nvm/versions/node/v22.14.0/bin
             cd /home/converter/apps/converter-online-server
-            $(which pm2) restart converter-server || $(which pm2) start dist/main.js --name converter-server
-            pm2 save
+            /home/converter/.nvm/versions/node/v22.14.0/bin/pm2 restart converter-server || /home/converter/.nvm/versions/node/v22.14.0/bin/pm2 start dist/main.js --name converter-server
+            /home/converter/.nvm/versions/node/v22.14.0/bin/pm2 save
