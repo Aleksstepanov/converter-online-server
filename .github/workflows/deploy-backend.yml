@@ -72,6 +72,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            export PATH=$PATH:/home/converter/.nvm/versions/node/v22.14.0/bin/pm2
             cd /home/converter/apps/converter-online-server
-            pm2 restart converter-server || pm2 start dist/main.js --name converter-server
+            $(which pm2) restart converter-server || $(which pm2) start dist/main.js --name converter-server
             pm2 save
