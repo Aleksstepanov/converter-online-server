@@ -24,15 +24,16 @@ jobs:
       - name: Билд проекта
         run: npm run build
 
-      - name: Деплой на сервер
+      - name: Деплой на сервер (копируем файлы без архивации!)
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "dist/"
+          source: "dist/*"
           target: "/home/converter/apps/converter-online-server/dist/"
           overwrite: true
+          rm: true
 
       - name: Создаём .env на сервере
         uses: appleboy/ssh-action@master
@@ -54,22 +55,6 @@ jobs:
             chmod 600 /home/converter/apps/converter-online-server/.env
             chown converter:www-data /home/converter/apps/converter-online-server/.env
 
-      - name: Распаковка файлов на сервере
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /home/converter/apps/converter-online-server
-            if [ -f "dist/main.js" ]; then
-              echo "Файлы уже на месте"
-            else
-              tar -xzf dist/main.js
-            fi
-            sudo chown -R converter:www-data /home/converter/apps/converter-online-server/dist/
-            sudo chmod -R 775 /home/converter/apps/converter-online-server/dist/
-
       - name: Применение миграций TypeORM
         uses: appleboy/ssh-action@master
         with:
@@ -78,11 +63,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/converter/apps/converter-online-server
-            if npm run migration:show | grep "No migrations"; then
-              echo "Нет новых миграций, пропускаем..."
-            else
-              npm run migration:run
-            fi
+            npm run migration:run || echo "Миграции уже применены"
 
       - name: Перезапуск бэкенда через PM2
         uses: appleboy/ssh-action@master
