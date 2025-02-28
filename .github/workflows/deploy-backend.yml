@@ -54,6 +54,22 @@ jobs:
             chmod 600 /home/converter/apps/converter-online-server/.env
             chown converter:www-data /home/converter/apps/converter-online-server/.env
 
+      - name: Распаковка файлов на сервере
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/converter/apps/converter-online-server
+            if [ -f "dist/main.js" ]; then
+              echo "Файлы уже на месте"
+            else
+              tar -xzf dist/main.js
+            fi
+            sudo chown -R converter:www-data /home/converter/apps/converter-online-server/dist/
+            sudo chmod -R 775 /home/converter/apps/converter-online-server/dist/
+
       - name: Применение миграций TypeORM
         uses: appleboy/ssh-action@master
         with:
