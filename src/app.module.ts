@@ -4,7 +4,8 @@ import { ErrorHandlingFilter } from './common/filters';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './modules/auth/auth.module';
-import { User } from './modules/auth/user.entity';
+import { UserModule } from './modules/user/user.module';
+import { User } from './modules/user/user.entity';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { User } from './modules/auth/user.entity';
       entities: [User],
       synchronize: true,
     }),
+    UserModule,
     AuthModule,
   ],
   providers: [
