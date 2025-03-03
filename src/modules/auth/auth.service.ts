@@ -37,7 +37,12 @@ export class AuthService {
         password: hashedPassword,
       });
 
-      return this.generateTokens(newUser.id, newUser.email);
+      return this.generateTokens(
+        newUser.id,
+        newUser.email,
+        newUser.firstName,
+        newUser.lastName,
+      );
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -51,7 +56,12 @@ export class AuthService {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    return this.generateTokens(user.id, user.email);
+    return this.generateTokens(
+      user.id,
+      user.email,
+      user.firstName,
+      user.lastName,
+    );
   }
 
   async refreshToken(oldRefreshToken: string) {
@@ -60,12 +70,17 @@ export class AuthService {
         secret: process.env.JWT_REFRESH_SECRET,
       });
 
-      const user = await this.userService.getUserById(payload.sub);
+      const user = await this.userService.getUserWithRefreshToken(payload.sub);
       if (!user || user.refreshToken !== oldRefreshToken) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      return this.generateTokens(user.id, user.email);
+      return this.generateTokens(
+        user.id,
+        user.email,
+        user.firstName,
+        user.lastName,
+      );
     } catch (error) {
       console.log('error', error);
       throw new UnauthorizedException('Invalid refresh token');
@@ -77,9 +92,14 @@ export class AuthService {
     return { message: 'Logged out' };
   }
 
-  private async generateTokens(userId: number, email: string) {
+  private async generateTokens(
+    userId: number,
+    email: string,
+    firstName: string,
+    lastName: string,
+  ) {
     const accessToken = this.jwtService.sign(
-      { sub: userId, email },
+      { sub: userId, email, firstName, lastName },
       {
         secret: process.env.JWT_ACCESS_SECRET,
         expiresIn: process.env.JWT_ACCESS_EXPIRATION,

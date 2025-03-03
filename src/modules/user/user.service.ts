@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import { CreateUserDto, UpdateUserDto, GetUserDto, DeleteUserDto } from './dto';
+import { CreateUserDto, UpdateUserDto, GetUserDto } from './dto';
 
 @Injectable()
 export class UserService {
@@ -11,20 +11,21 @@ export class UserService {
     private userRepository: Repository<User>,
   ) {}
 
-  create(createUserDto: CreateUserDto) {
+  create(createUserDto: CreateUserDto): Promise<User> {
     const user = this.userRepository.create(createUserDto);
     return this.userRepository.save(user);
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
-    await this.userRepository.update(id, updateUserDto);
-    return this.findOne(id.toString());
+  async update(
+    userId: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<GetUserDto | null> {
+    await this.userRepository.update(userId, updateUserDto);
+    return this.getUser(userId);
   }
 
-  async findOne(id: string): Promise<GetUserDto | null> {
-    const user = await this.userRepository.findOne({
-      where: { id: Number(id) },
-    });
+  async getUser(userId: number): Promise<GetUserDto | null> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) return null;
     return {
       id: user.id,
@@ -34,16 +35,14 @@ export class UserService {
     };
   }
 
-  async remove(id: string): Promise<DeleteUserDto> {
-    await this.userRepository.delete(id);
-    return { message: 'User successfully deleted' };
-  }
-
   async getUserByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { email } });
   }
 
-  async getUserById(id: number): Promise<User | null> {
-    return this.userRepository.findOne({ where: { id } });
+  async getUserWithRefreshToken(userId: number): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'email', 'firstName', 'lastName', 'refreshToken'],
+    });
   }
 }
